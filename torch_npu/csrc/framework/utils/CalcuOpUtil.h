@@ -84,6 +84,8 @@ public:
                                                       size_t count, aclrtMemcpyKind kind);
     static aclError LaunchAsyncCopyTaskWithModeSwitch(const c10::StorageImpl &dst, size_t dstMax, void *src,
                                                       size_t count, aclrtMemcpyKind kind);
+    static aclError LaunchAsyncPrefetchTaskWithModeSwitch(void *ptr, size_t count,
+                                                            int device_id, uint32_t flags);
 
     static void CheckMemoryOverLaps(c10::ArrayRef<at::Tensor> inputs, c10::ArrayRef<at::Tensor> outputs);
     static bool IsScalarWrappedToTensor(const at::Tensor &tensor);

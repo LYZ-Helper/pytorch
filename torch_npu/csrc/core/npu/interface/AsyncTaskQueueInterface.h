@@ -17,6 +17,16 @@ struct CopyParas {
     static std::map<int64_t, std::string> COPY_PARAS_MAP;
 };
 
+struct PrefetchParas {
+    void *ptr = nullptr;
+    size_t count = 0;
+    int device_id = 0;
+    uint32_t flags = 0;
+    void Copy(PrefetchParas& other);
+    static std::map<int64_t, std::string> PREFETCH_PARAS_MAP;
+};
+
+
 enum EventAllocatorType {
     HOST_ALLOCATOR_EVENT = 1,
     NPU_ALLOCATOR_EVENT = 2,
@@ -42,6 +52,7 @@ enum QueueParamType {
     RESET_EVENT = 6,
     EXECUTE_OPAPI = 7,
     EXECUTE_OPAPI_V2 = 8,
+    ASYNC_PREFETCH = 9,
 };
 
 struct QueueParas {
@@ -55,6 +66,8 @@ struct QueueParas {
 };
 
 aclError LaunchAsyncCopyTask(void* dst, size_t dstLen, void* src, size_t srcLen, aclrtMemcpyKind kind);
+aclError LaunchAsyncPrefetchTask(void* ptr, size_t count, int device_id, uint32_t flags);
+
 
 aclError LaunchBatchAsyncCopyTask(void **dsts, size_t *dstLens, void **srcs, size_t *srcLens, size_t numBatches,
                                   aclrtMemcpyBatchAttr *attrs, size_t *attrsIndexes, size_t numAttrs,

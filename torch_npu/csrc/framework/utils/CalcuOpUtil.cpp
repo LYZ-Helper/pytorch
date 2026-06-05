@@ -254,6 +254,14 @@ aclError CalcuOpUtil::LaunchAsyncCopyTaskWithModeSwitch(
     return ret;
 }
 
+aclError CalcuOpUtil::LaunchAsyncPrefetchTaskWithModeSwitch(
+    void *ptr, size_t count, int device_id, uint32_t flags)
+{
+    aclError ret = c10_npu::queue::LaunchAsyncPrefetchTask(ptr, count, device_id, flags);
+    return ret;
+}
+
+
 int64_t CalcuOpUtil::GetTensorNpuFormat(const at::Tensor &tensor)
 {
     TORCH_CHECK(tensor.device().type() == c10::DeviceType::PrivateUse1,

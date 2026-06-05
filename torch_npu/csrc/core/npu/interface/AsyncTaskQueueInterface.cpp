@@ -19,6 +19,11 @@ std::map<int64_t, std::string> CopyParas::COPY_PARAS_MAP{
     { ACL_MEMCPY_DEVICE_TO_HOST, "acl_memcpy_device_to_host" },
     { ACL_MEMCPY_DEVICE_TO_DEVICE, "acl_memcpy_device_to_device" },
 };
+
+std::map<int64_t, std::string> PrefetchParas::PREFETCH_PARAS_MAP{
+    { ASYNC_PREFETCH, "async_prefetch" },
+};
+
 std::map<int64_t, std::string> EventParas::EVENT_PARAS_MAP{
     { RECORD_EVENT, "record_event" },
     { WAIT_EVENT, "wait_event" },
@@ -32,6 +37,15 @@ void CopyParas::Copy(CopyParas &other)
     this->srcLen = other.srcLen;
     this->kind = other.kind;
 }
+
+void PrefetchParas::Copy(PrefetchParas &other)
+{
+    this->ptr = other.ptr;
+    this->count = other.count;
+    this->device_id = other.device_id;
+    this->flags = other.flags;
+}
+
 
 void EventParas::Copy(EventParas &other)
 {
@@ -47,6 +61,17 @@ public:
 
 private:
     CopyParas copyParam_;
+};
+
+
+class AsyncPrefetchTask {
+public:
+    AsyncPrefetchTask(void *ptr, size_t count, int device_id, uint32_t flags);
+    ~AsyncPrefetchTask() = default;
+    void LaunchPrefetchTask();
+
+private:
+    PrefetchParas prefetchParam_;
 };
 
 class AsyncBatchCopyTask {
@@ -164,12 +189,39 @@ void AsyncBatchCopyTask::LaunchBatchCopyTask(void **dsts, size_t *dstLens, void 
     }
 }
 
+AsyncPrefetchTask::AsyncPrefetchTask(void *ptr, size_t count, int device_id, uint32_t flags)
+{
+    prefetchParam_.ptr = ptr;
+    prefetchParam_.count = count;
+    prefetchParam_.device_id = device_id;
+    prefetchParam_.flags = flags;
+}
+
+void AsyncPrefetchTask::LaunchPrefetchTask()
+{
+    aclrtMemManagedLocation location;
+    location.type = 1;
+    location.id = prefetchParam_.device_id;
+    c10_npu::NPUStream stream = c10_npu::getCurrentNPUStream();
+    NPU_CHECK_ERROR(aclrtMemManagedPrefetchAsync(
+        prefetchParam_.ptr, prefetchParam_.count, location, prefetchParam_.flags, stream));
+}
+
+
 aclError LaunchAsyncCopyTask(void *dst, size_t dstLen, void *src, size_t srcLen, aclrtMemcpyKind kind)
 {
     AsyncCopyTask copyTask(dst, dstLen, src, srcLen, kind);
     copyTask.LaunchCopyTask();
     return ACL_ERROR_NONE;
 }
+
+aclError LaunchAsyncPrefetchTask(void *ptr, size_t count, int device_id, uint32_t flags)
+{
+    AsyncPrefetchTask prefetchTask(ptr, count, device_id, flags);
+    prefetchTask.LaunchPrefetchTask();
+    return ACL_ERROR_NONE;
+}
+
 
 aclError LaunchBatchAsyncCopyTask(void **dsts, size_t *dstLens, void **srcs, size_t *srcLens,
                                   size_t numBatches, aclrtMemcpyBatchAttr *attrs, size_t *attrsIndexes, size_t numAttrs,

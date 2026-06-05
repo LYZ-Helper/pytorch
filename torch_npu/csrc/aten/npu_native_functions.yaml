@@ -81,6 +81,8 @@ custom:
       CompositeExplicitAutograd: empty_with_format
   - func: copy_memory_(Tensor(a!) self, Tensor src, bool non_blocking=False) -> Tensor(a!)
     device_check: NoCheck
+  - func: prefetch_memory_(Tensor(a!) self, bool non_blocking=False) -> Tensor(a!)
+    device_check: NoCheck
   - func: get_storage_size(Tensor self) -> int
   - func: npu_format_cast(Tensor self, int acl_format, int? customize_dtype=None) -> Tensor
     exposed: True
